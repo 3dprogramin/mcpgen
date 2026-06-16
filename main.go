@@ -123,15 +123,23 @@ func runAdd(args []string) error {
 		}
 	}
 
-	name, cfg, err := tui.AddCustom()
+	cs, err := tui.AddCustom()
 	if err != nil {
 		return err
 	}
-	added, err := generate.Write(map[string]json.RawMessage{name: cfg}, force)
+	added, err := generate.Write(map[string]json.RawMessage{cs.Name: cs.Config}, force)
 	if err != nil {
 		return err
 	}
 	printWrote(added)
+
+	if cs.SaveToCatalog {
+		path, err := catalog.SaveCustom(cs.Name, cs.Description, cs.Config)
+		if err != nil {
+			return fmt.Errorf("saving to catalog: %w", err)
+		}
+		fmt.Printf("%s Saved %q to your catalog (%s)\n", style.Green("✓"), cs.Name, path)
+	}
 	return nil
 }
 
@@ -193,7 +201,12 @@ func runList(cat *catalog.Catalog) error {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	fmt.Fprintln(w, "NAME\tDESCRIPTION")
 	for _, name := range cat.Names() {
-		fmt.Fprintf(w, "%s\t%s\n", name, cat.Servers[name].Description)
+		s := cat.Servers[name]
+		desc := s.Description
+		if s.Custom {
+			desc += style.Dim(" (custom)")
+		}
+		fmt.Fprintf(w, "%s\t%s\n", name, desc)
 	}
 	return w.Flush()
 }

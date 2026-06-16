@@ -113,7 +113,9 @@ stdio by default), and the relevant fields:
 - **sse / http** - the URL and optional headers
 
 The result is merged into `./.mcp.json` just like `generate` (pass `--force` to
-overwrite an existing server of the same name).
+overwrite an existing server of the same name). It then asks whether to **save
+the server to your catalog** for reuse - if you say yes, it's written to your
+user catalog (see below) so it shows up in `list` and `generate` from then on.
 
 ### Overriding args
 
@@ -184,6 +186,15 @@ description, and the raw MCP server config:
 Both `stdio` servers (`command` + `args` + `env`) and `sse` servers (`url`) are
 supported - the config is passed through verbatim, so any valid MCP server shape
 works.
+
+### Your personal catalog
+
+In addition to the bundled catalog, mcpgen reads a user catalog from
+`$XDG_CONFIG_HOME/mcpgen/servers.json` (defaulting to
+`~/.config/mcpgen/servers.json`). It uses the same format and is merged on top of
+the bundled one, so your own servers appear in `list`/`generate` (marked
+`(custom)`) and survive upgrades. `mcpgen add` writes here when you choose to
+save; you can also edit the file by hand.
 
 ## Contributing
 

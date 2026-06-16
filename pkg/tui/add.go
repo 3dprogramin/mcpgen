@@ -12,17 +12,25 @@ import (
 	"github.com/3dprogramin/mcpgen/pkg/style"
 )
 
-// AddCustom interactively builds a custom MCP server and returns its name and
-// JSON config.
-func AddCustom() (string, json.RawMessage, error) {
+// CustomServer is the result of the interactive add flow.
+type CustomServer struct {
+	Name          string
+	Config        json.RawMessage
+	SaveToCatalog bool   // also persist to the user catalog
+	Description   string // used when SaveToCatalog is true
+}
+
+// AddCustom interactively builds a custom MCP server and asks whether to also
+// save it to the user catalog for reuse.
+func AddCustom() (CustomServer, error) {
 	r := bufio.NewReader(os.Stdin)
 
 	name := readLine(r, style.Bold("Server name")+": ")
 	if name == "" {
-		return "", nil, fmt.Errorf("a name is required")
+		return CustomServer{}, fmt.Errorf("a name is required")
 	}
 	if strings.ContainsAny(name, " \t") {
-		return "", nil, fmt.Errorf("server name must not contain spaces")
+		return CustomServer{}, fmt.Errorf("server name must not contain spaces")
 	}
 
 	spec := catalog.ServerSpec{Type: chooseType(r)}
@@ -38,10 +46,23 @@ func AddCustom() (string, json.RawMessage, error) {
 
 	cfg, err := spec.Config()
 	if err != nil {
-		return "", nil, err
+		return CustomServer{}, err
 	}
+
+	out := CustomServer{Name: name, Config: cfg}
+	if confirm(r, fmt.Sprintf("Save %q to your catalog for reuse?", name)) {
+		out.SaveToCatalog = true
+		out.Description = readDefault(r, style.Bold("Description"), name)
+	}
+
 	fmt.Println() // separate the prompts from the result message
-	return name, cfg, nil
+	return out, nil
+}
+
+// confirm asks a yes/no question, defaulting to no.
+func confirm(r *bufio.Reader, question string) bool {
+	answer := strings.ToLower(readLine(r, question+" [y/N]: "))
+	return answer == "y" || answer == "yes"
 }
 
 // chooseType prompts for a transport type, defaulting to the first one (stdio).

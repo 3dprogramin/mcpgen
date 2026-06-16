@@ -6,33 +6,73 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"os"
 	"sort"
 )
 
 //go:embed servers.json
 var catalogBytes []byte
 
-// Server is one entry in the bundled catalog: a human-readable description plus
-// the raw MCP server config that gets written to .mcp.json.
+// Server is one entry in the catalog: a human-readable description plus the raw
+// MCP server config that gets written to .mcp.json. Custom is true for entries
+// loaded from the user's catalog rather than the bundled one.
 type Server struct {
 	Description string          `json:"description"`
 	Config      json.RawMessage `json:"config"`
+	Custom      bool            `json:"-"`
 }
 
 // Catalog is the full set of known servers, keyed by server name. order holds
-// the server names in the order they appear in servers.json.
+// the server names in display order (bundled order, then user additions).
 type Catalog struct {
 	Servers map[string]Server `json:"servers"`
 	order   []string
 }
 
-// Load parses the embedded servers.json, preserving the file's server order.
+// Load parses the bundled catalog and merges the user catalog
+// (~/.config/mcpgen/servers.json) on top, preserving display order.
 func Load() (*Catalog, error) {
-	var c Catalog
-	if err := json.Unmarshal(catalogBytes, &c); err != nil {
+	c, err := parseCatalog(catalogBytes)
+	if err != nil {
 		return nil, fmt.Errorf("parsing embedded catalog: %w", err)
 	}
-	order, err := serverOrder(catalogBytes)
+
+	path, err := userCatalogPath()
+	if err != nil {
+		return nil, err
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return c, nil
+		}
+		return nil, fmt.Errorf("reading user catalog %s: %w", path, err)
+	}
+	user, err := parseCatalog(data)
+	if err != nil {
+		return nil, fmt.Errorf("user catalog %s: %w", path, err)
+	}
+	for _, name := range user.order {
+		s := user.Servers[name]
+		s.Custom = true
+		if _, exists := c.Servers[name]; !exists {
+			c.order = append(c.order, name)
+		}
+		c.Servers[name] = s
+	}
+	return c, nil
+}
+
+// parseCatalog parses a catalog file's bytes into a Catalog with file order.
+func parseCatalog(data []byte) (*Catalog, error) {
+	var c Catalog
+	if err := json.Unmarshal(data, &c); err != nil {
+		return nil, err
+	}
+	if c.Servers == nil {
+		c.Servers = map[string]Server{}
+	}
+	order, err := serverOrder(data)
 	if err != nil {
 		return nil, fmt.Errorf("reading catalog order: %w", err)
 	}

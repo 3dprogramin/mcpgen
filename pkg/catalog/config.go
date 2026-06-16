@@ -86,6 +86,17 @@ func (o orderedObject) set(key string, val json.RawMessage) {
 	}
 }
 
+// put replaces the value for an existing key, or appends it if absent.
+func (o *orderedObject) put(key string, val json.RawMessage) {
+	for i := range *o {
+		if (*o)[i].Key == key {
+			(*o)[i].Value = val
+			return
+		}
+	}
+	*o = append(*o, kv{Key: key, Value: val})
+}
+
 // ServerArgs returns the "args" array of a server config, if it has one.
 func ServerArgs(config json.RawMessage) ([]string, bool) {
 	obj, err := parseOrderedObject(config)
