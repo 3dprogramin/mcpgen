@@ -43,20 +43,25 @@ mcpgen generate chrome-devtools --force
 
 ### Interactive mode
 
-Run `generate` with no server names to pick from a numbered list and then set
-any per-server args:
+Run `generate` with no server names to pick servers and then set any per-server
+args:
 
 ```sh
 mcpgen generate
 ```
 
+On a terminal you get an arrow-key checkbox list:
+
 ```
-Available MCP servers:
-  1)  burp             Burp Suite — SSE bridge to Burp's MCP endpoint
-  2)  chrome-devtools  Chrome DevTools — drive and inspect a Chrome instance
+Select MCP servers — ↑/↓ move · space toggle · a all · enter confirm · q quit
+> [x] burp             Burp Suite — SSE bridge to Burp's MCP endpoint
+  [ ] chrome-devtools  Chrome DevTools — drive and inspect a Chrome instance
+  [x] mongodb          MongoDB — query and manage a MongoDB database
   ...
-Select servers (e.g. 1 3, 1-3, or 'all'): 1 2
 ```
+
+When stdin/stdout isn't a terminal (pipes, CI), it falls back to a numbered
+prompt: `Select servers (e.g. 1 3, 1-3, or 'all')`.
 
 ### Overriding args
 

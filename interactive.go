@@ -9,8 +9,9 @@ import (
 	"text/tabwriter"
 )
 
-// interactiveSelect runs the no-args generate flow: pick servers from a numbered
-// list, then optionally override each selected server's args.
+// interactiveSelect runs the no-args generate flow: pick servers (arrow-key
+// checkbox on a TTY, numbered prompt otherwise), then optionally override each
+// selected server's args.
 func interactiveSelect(cat *Catalog) ([]selection, error) {
 	names := cat.names()
 	if len(names) == 0 {
@@ -18,21 +19,22 @@ func interactiveSelect(cat *Catalog) ([]selection, error) {
 	}
 	reader := bufio.NewReader(os.Stdin)
 
-	fmt.Println("Available MCP servers:")
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	for i, name := range names {
-		fmt.Fprintf(w, "  %d)\t%s\t%s\n", i+1, name, cat.Servers[name].Description)
+	var idx []int
+	var err error
+	if stdinIsTTY() {
+		descs := make([]string, len(names))
+		for i, n := range names {
+			descs[i] = cat.Servers[n].Description
+		}
+		idx, err = pickServers(reader, names, descs)
+	} else {
+		idx, err = numberedSelect(reader, cat, names)
 	}
-	w.Flush()
-
-	fmt.Print("\nSelect servers (e.g. 1 3, 1-3, or 'all'): ")
-	line, err := reader.ReadString('\n')
-	if err != nil && line == "" {
-		return nil, err
-	}
-	idx, err := parseSelection(line, len(names))
 	if err != nil {
 		return nil, err
+	}
+	if len(idx) == 0 {
+		return nil, fmt.Errorf("no servers selected")
 	}
 
 	var sels []selection
@@ -51,6 +53,24 @@ func interactiveSelect(cat *Catalog) ([]selection, error) {
 		sels = append(sels, sel)
 	}
 	return sels, nil
+}
+
+// numberedSelect is the non-TTY fallback: print a numbered list and read a
+// selection line.
+func numberedSelect(reader *bufio.Reader, cat *Catalog, names []string) ([]int, error) {
+	fmt.Println("Available MCP servers:")
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	for i, name := range names {
+		fmt.Fprintf(w, "  %d)\t%s\t%s\n", i+1, name, cat.Servers[name].Description)
+	}
+	w.Flush()
+
+	fmt.Print("\nSelect servers (e.g. 1 3, 1-3, or 'all'): ")
+	line, err := reader.ReadString('\n')
+	if err != nil && line == "" {
+		return nil, err
+	}
+	return parseSelection(line, len(names))
 }
 
 // parseSelection turns "1 3", "1-3", "all" (also comma-separated) into a sorted,
