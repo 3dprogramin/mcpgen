@@ -1,10 +1,19 @@
 # mcpgen
 
+[![CI](https://github.com/3dprogramin/mcpgen/actions/workflows/ci.yml/badge.svg)](https://github.com/3dprogramin/mcpgen/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/3dprogramin/mcpgen)](https://github.com/3dprogramin/mcpgen/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+
 A tiny CLI that generates project-local `.mcp.json` files from a bundled catalog
 of [MCP](https://modelcontextprotocol.io) servers — so you stop copy-pasting and
 reformatting server configs every time you start a new project.
 
+![demo](./demo.gif)
+
 ## Install
+
+Download a prebuilt binary for your platform from the
+[latest release](https://github.com/3dprogramin/mcpgen/releases/latest), or:
 
 ```sh
 go install github.com/3dprogramin/mcpgen@latest
@@ -145,11 +154,24 @@ Both `stdio` servers (`command` + `args` + `env`) and `sse` servers (`url`) are
 supported — the config is passed through verbatim, so any valid MCP server shape
 works.
 
-### Contributing a server
+## Contributing
 
-1. Add an entry to `servers.json` (use placeholders, never real secrets).
-2. Run `go build -o mcpgen .` and verify with `mcpgen list`.
-3. Open a pull request.
+The catalog is meant to be community-maintained — adding a server is the easiest
+and most useful contribution. See [CONTRIBUTING.md](./CONTRIBUTING.md) for the
+entry template and rules (always use placeholders, never real secrets).
+
+## Development
+
+```sh
+make check      # gofmt check, go vet, tests (-race), build
+make test       # tests only
+make build      # build ./mcpgen
+make demo       # render demo.gif (needs https://github.com/charmbracelet/vhs)
+make snapshot   # local GoReleaser build, no publish (needs goreleaser)
+```
+
+Releases are cut by pushing a `vX.Y.Z` tag; a GitHub Actions workflow runs
+GoReleaser to build cross-platform binaries and publish a GitHub Release.
 
 ## License
 

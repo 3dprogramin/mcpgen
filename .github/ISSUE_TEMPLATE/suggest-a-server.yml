@@ -1,0 +1,42 @@
+name: Suggest an MCP server
+description: Propose a new server for the mcpgen catalog
+title: "server: <name>"
+labels: ["catalog"]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: Server name
+      description: The key it should have in the catalog (kebab-case).
+      placeholder: my-server
+    validations:
+      required: true
+  - type: input
+    id: description
+    attributes:
+      label: One-line description
+      placeholder: Short summary shown in `mcpgen list`
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: Config
+      description: The MCP server config, with placeholders instead of real secrets.
+      render: json
+      placeholder: |
+        {
+          "type": "stdio",
+          "command": "npx",
+          "args": ["-y", "my-mcp-server", "--token=YOUR_TOKEN"],
+          "env": {}
+        }
+    validations:
+      required: true
+  - type: input
+    id: link
+    attributes:
+      label: Link
+      description: Homepage or repo for the server.
+    validations:
+      required: false
