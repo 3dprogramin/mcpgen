@@ -39,7 +39,7 @@ func pickServers(reader *bufio.Reader, names, descs []string) ([]int, error) {
 	}
 
 	fmt.Fprint(out, bold("Select MCP servers")+
-		dim(" — ↑/↓ move · space toggle · a all · enter confirm · q quit")+"\r\n")
+		dim(" - ↑/↓ move · space toggle · a all · enter confirm · q quit")+"\r\n")
 
 	// Visible width of the "pointer + box + space" prefix, which is colored but
 	// fixed-width; truncation works on the plain body to keep widths correct.

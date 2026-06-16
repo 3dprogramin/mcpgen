@@ -32,7 +32,7 @@ type selection struct {
 // existing file and refusing to clobber existing servers unless force is set.
 func runGenerate(cat *Catalog, sels []selection, force bool) error {
 	if len(sels) == 0 {
-		return errors.New("no servers given — try `mcpgen list` to see what's available")
+		return errors.New("no servers given - try `mcpgen list` to see what's available")
 	}
 
 	// Validate every requested name up front so we never write a partial result.

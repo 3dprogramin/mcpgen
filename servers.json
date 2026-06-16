@@ -1,7 +1,7 @@
 {
   "servers": {
     "mongodb": {
-      "description": "MongoDB — query and manage a MongoDB database",
+      "description": "MongoDB - query and manage a MongoDB database",
       "config": {
         "type": "stdio",
         "command": "npx",
@@ -15,7 +15,7 @@
       }
     },
     "obsidian": {
-      "description": "Obsidian — read and write notes in an Obsidian vault",
+      "description": "Obsidian - read and write notes in an Obsidian vault",
       "config": {
         "command": "npx",
         "args": [
@@ -25,7 +25,7 @@
       }
     },
     "chrome-devtools": {
-      "description": "Chrome DevTools — drive and inspect a Chrome instance",
+      "description": "Chrome DevTools - drive and inspect a Chrome instance",
       "config": {
         "type": "stdio",
         "command": "npx",
@@ -38,7 +38,7 @@
       }
     },
     "figma-developer": {
-      "description": "Figma — read Figma files and download images",
+      "description": "Figma - read Figma files and download images",
       "config": {
         "type": "stdio",
         "command": "npx",
@@ -52,7 +52,7 @@
       }
     },
     "burp": {
-      "description": "Burp Suite — SSE bridge to Burp's MCP endpoint",
+      "description": "Burp Suite - SSE bridge to Burp's MCP endpoint",
       "config": {
         "type": "sse",
         "url": "http://127.0.0.1:9876"

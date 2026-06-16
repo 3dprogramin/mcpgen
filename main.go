@@ -13,7 +13,7 @@ import (
 // version is overridden at release time via -ldflags "-X main.version=...".
 var version = "dev"
 
-const usage = `mcpgen — generate .mcp.json files from a catalog of MCP servers
+const usage = `mcpgen - generate .mcp.json files from a catalog of MCP servers
 
 Usage:
   mcpgen list                         List available servers

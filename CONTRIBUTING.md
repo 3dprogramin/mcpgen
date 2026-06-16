@@ -45,7 +45,7 @@ Thanks for helping grow the catalog! The most valuable contribution is usually
 
 ## Code changes
 
-- Run `make check` before pushing — CI runs the same steps and will fail on
+- Run `make check` before pushing - CI runs the same steps and will fail on
   unformatted code, vet errors, or failing tests.
 - Add or update tests for behavior changes.
 

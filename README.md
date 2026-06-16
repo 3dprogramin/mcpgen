@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
 A tiny CLI that generates project-local `.mcp.json` files from a bundled catalog
-of [MCP](https://modelcontextprotocol.io) servers — so you stop copy-pasting and
+of [MCP](https://modelcontextprotocol.io) servers - so you stop copy-pasting and
 reformatting server configs every time you start a new project.
 
 ![demo](./demo.gif)
@@ -43,7 +43,7 @@ mcpgen generate chrome-devtools mongodb
 
 - If `./.mcp.json` doesn't exist, it's created.
 - If it exists, the selected servers are **merged in**.
-- If a server is already defined, mcpgen refuses to clobber it — pass `--force`
+- If a server is already defined, mcpgen refuses to clobber it - pass `--force`
   (`-f`) to overwrite:
 
 ```sh
@@ -62,10 +62,10 @@ mcpgen generate
 On a terminal you get an arrow-key checkbox list:
 
 ```
-Select MCP servers — ↑/↓ move · space toggle · a all · enter confirm · q quit
-> [x] burp             Burp Suite — SSE bridge to Burp's MCP endpoint
-  [ ] chrome-devtools  Chrome DevTools — drive and inspect a Chrome instance
-  [x] mongodb          MongoDB — query and manage a MongoDB database
+Select MCP servers - ↑/↓ move · space toggle · a all · enter confirm · q quit
+> [x] burp             Burp Suite - SSE bridge to Burp's MCP endpoint
+  [ ] chrome-devtools  Chrome DevTools - drive and inspect a Chrome instance
+  [x] mongodb          MongoDB - query and manage a MongoDB database
   ...
 ```
 
@@ -87,7 +87,7 @@ defaults. (This differs from the command-line form below, which merges.)
 ### Overriding args
 
 Arg overrides apply to **exactly one server at a time**. If you pass any args,
-you must name a single server — naming two or more with args is an error. To
+you must name a single server - naming two or more with args is an error. To
 customize several servers, use interactive mode or run `generate` once per
 server.
 
@@ -97,7 +97,7 @@ Any extra args after the single server name are merged into its `args`:
 mcpgen generate chrome-devtools --browser-url=http://127.0.0.1:9333
 ```
 
-- A `--flag=value` override **replaces** a matching flag already in the config —
+- A `--flag=value` override **replaces** a matching flag already in the config -
   whether it's stored joined (`--flag=old`) or split (`--flag`, `old`).
 - Anything else is **appended** (e.g. `--headless`).
 
@@ -140,7 +140,7 @@ server config:
 {
   "servers": {
     "burp": {
-      "description": "Burp Suite — SSE bridge to Burp's MCP endpoint",
+      "description": "Burp Suite - SSE bridge to Burp's MCP endpoint",
       "config": {
         "type": "sse",
         "url": "http://127.0.0.1:9876"
@@ -151,12 +151,12 @@ server config:
 ```
 
 Both `stdio` servers (`command` + `args` + `env`) and `sse` servers (`url`) are
-supported — the config is passed through verbatim, so any valid MCP server shape
+supported - the config is passed through verbatim, so any valid MCP server shape
 works.
 
 ## Contributing
 
-The catalog is meant to be community-maintained — adding a server is the easiest
+The catalog is meant to be community-maintained - adding a server is the easiest
 and most useful contribution. See [CONTRIBUTING.md](./CONTRIBUTING.md) for the
 entry template and rules (always use placeholders, never real secrets).
 
