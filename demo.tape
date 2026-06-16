@@ -1,5 +1,5 @@
 # Render with: make demo   (needs https://github.com/charmbracelet/vhs)
-Output _img/demo.gif
+Output "_img/demo.gif"
 
 Set Shell "bash"
 Set FontSize 18
@@ -20,18 +20,19 @@ Sleep 500ms
 Enter
 Sleep 1500ms
 
-# Select chrome-devtools.
-Down
-Sleep 400ms
-Space
-Sleep 600ms
-
-# Select mongodb.
-Down
-Down
-Sleep 400ms
-Space
+# Filter to chrome and select it.
+Type "chrome"
 Sleep 800ms
+Space
+Sleep 700ms
+
+# Clear the filter, search for mongo, select it.
+Backspace 6
+Sleep 500ms
+Type "mongo"
+Sleep 800ms
+Space
+Sleep 700ms
 
 Enter
 Sleep 1s

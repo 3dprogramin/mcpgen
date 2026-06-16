@@ -59,15 +59,29 @@ args:
 mcpgen generate
 ```
 
-On a terminal you get an arrow-key checkbox list:
+On a terminal you get a filterable checkbox list - just start typing to narrow
+it down (matches server name or description):
 
 ```
-Select MCP servers - ↑/↓ move · space toggle · a all · enter confirm · q quit
-> [x] burp             Burp Suite - SSE bridge to Burp's MCP endpoint
-  [ ] chrome-devtools  Chrome DevTools - drive and inspect a Chrome instance
-  [x] mongodb          MongoDB - query and manage a MongoDB database
-  ...
+Filter: mongo▌
+type to filter · ↑/↓ move · space toggle · ^A all · enter confirm · esc quit
+> [ ] mongodb          MongoDB - query and manage a MongoDB database
+1 selected · showing 1-1 of 1
 ```
+
+| Key | Action |
+|-----|--------|
+| any text | filter the list (name + description) |
+| ↑ / ↓ | move the cursor |
+| space | toggle the current item |
+| Ctrl-A | toggle all currently matching items |
+| Backspace | edit the filter |
+| Enter | confirm selection |
+| Esc / Ctrl-C | abort |
+
+The list scrolls when there are more matches than fit on screen, so it stays
+usable with a large catalog. Selections persist while you change the filter, so
+you can search, toggle, search again, and toggle more.
 
 When stdin/stdout isn't a terminal (pipes, CI), it falls back to a numbered
 prompt: `Select servers (e.g. 1 3, 1-3, or 'all')`.

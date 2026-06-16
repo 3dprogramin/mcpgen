@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"unicode/utf8"
 
 	"golang.org/x/term"
@@ -18,9 +19,26 @@ func stdinIsTTY() bool {
 	return term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd()))
 }
 
-// pickServers shows an interactive checkbox list and returns the selected
-// indices. Up/down (or k/j) move, space toggles, a toggles all, enter confirms,
-// q or ctrl-c aborts.
+// matchServers returns the indices of servers whose name or description contains
+// query (case-insensitive). An empty query matches everything.
+func matchServers(names, descs []string, query string) []int {
+	q := strings.ToLower(strings.TrimSpace(query))
+	out := make([]int, 0, len(names))
+	for i := range names {
+		if q == "" ||
+			strings.Contains(strings.ToLower(names[i]), q) ||
+			strings.Contains(strings.ToLower(descs[i]), q) {
+			out = append(out, i)
+		}
+	}
+	return out
+}
+
+const pickerHint = "type to filter · ↑/↓ move · space toggle · ^A all · enter confirm · esc quit"
+
+// pickServers shows an interactive, filterable checkbox list and returns the
+// selected indices (into names). Typing filters; ↑/↓ move; space toggles; ctrl-a
+// toggles all matches; enter confirms; esc / ctrl-c aborts.
 func pickServers(reader *bufio.Reader, names, descs []string) ([]int, error) {
 	fd := int(os.Stdin.Fd())
 	oldState, err := term.MakeRaw(fd)
@@ -31,7 +49,10 @@ func pickServers(reader *bufio.Reader, names, descs []string) ([]int, error) {
 
 	out := os.Stdout
 	selected := make([]bool, len(names))
-	active := 0
+	query := ""
+	filtered := matchServers(names, descs, query)
+	active := 0 // index into filtered
+	offset := 0 // top of the visible window into filtered
 
 	nameW := 0
 	for _, n := range names {
@@ -39,40 +60,91 @@ func pickServers(reader *bufio.Reader, names, descs []string) ([]int, error) {
 			nameW = len(n)
 		}
 	}
-
-	fmt.Fprint(out, style.Bold("Select MCP servers")+
-		style.Dim(" - ↑/↓ move · space toggle · a all · enter confirm · q quit")+"\r\n")
-
-	// Visible width of the "pointer + box + space" prefix, which is colored but
-	// fixed-width; truncation works on the plain body to keep widths correct.
-	const prefixW = 2 + 3 + 1
+	const prefixW = 2 + 3 + 1 // "> " + "[ ]" + " "
 
 	first := true
+	prevLines := 0
 	draw := func() {
 		if !first {
-			fmt.Fprintf(out, "\x1b[%dA", len(names))
+			fmt.Fprintf(out, "\x1b[%dA\x1b[0J", prevLines) // up to top of block, clear below
 		}
 		first = false
-		width := 80
-		if w, _, e := term.GetSize(fd); e == nil && w > 0 {
-			width = w
+
+		width, height := 80, 24
+		if w, h, e := term.GetSize(fd); e == nil {
+			if w > 0 {
+				width = w
+			}
+			if h > 0 {
+				height = h
+			}
 		}
-		for i, n := range names {
+		// Reserve 2 header lines + 1 status line, plus a spare so the final
+		// newline never scrolls the block out of place.
+		maxRows := height - 4
+		if maxRows < 1 {
+			maxRows = 1
+		}
+
+		// Keep active in range and scrolled into view.
+		if active >= len(filtered) {
+			active = len(filtered) - 1
+		}
+		if active < 0 {
+			active = 0
+		}
+		if active < offset {
+			offset = active
+		}
+		if active >= offset+maxRows {
+			offset = active - maxRows + 1
+		}
+		if offset < 0 {
+			offset = 0
+		}
+
+		lines := 0
+		fmt.Fprintf(out, "\r\x1b[2K%s %s\r\n", style.Bold("Filter:"), query+"▌")
+		lines++
+		fmt.Fprintf(out, "\r\x1b[2K%s\r\n", style.Dim(truncate(pickerHint, width-1)))
+		lines++
+
+		if len(filtered) == 0 {
+			fmt.Fprintf(out, "\r\x1b[2K  %s\r\n", style.Dim("(no matches)"))
+			lines++
+		}
+		end := offset + maxRows
+		if end > len(filtered) {
+			end = len(filtered)
+		}
+		for vi := offset; vi < end; vi++ {
+			i := filtered[vi]
 			pointer := "  "
-			if i == active {
+			if vi == active {
 				pointer = style.Cyan("> ")
 			}
 			box := "[ ]"
 			if selected[i] {
 				box = style.Green("[x]")
 			}
-			body := fmt.Sprintf("%-*s  %s", nameW, n, descs[i])
+			body := fmt.Sprintf("%-*s  %s", nameW, names[i], descs[i])
 			fmt.Fprintf(out, "\r\x1b[2K%s%s %s\r\n", pointer, box, truncate(body, width-1-prefixW))
+			lines++
 		}
+
+		fmt.Fprintf(out, "\r\x1b[2K%s\r\n", style.Dim(statusLine(selected, filtered, offset, end)))
+		lines++
+		prevLines = lines
 	}
 
-	move := func(delta int) {
-		active = (active + delta + len(names)) % len(names)
+	refilter := func() {
+		filtered = matchServers(names, descs, query)
+		active, offset = 0, 0
+	}
+	move := func(d int) {
+		if len(filtered) > 0 {
+			active = (active + d + len(filtered)) % len(filtered)
+		}
 	}
 
 	draw()
@@ -81,39 +153,39 @@ func pickServers(reader *bufio.Reader, names, descs []string) ([]int, error) {
 		if err != nil {
 			return nil, err
 		}
-		switch b {
-		case 3, 'q': // ctrl-c / q
+		switch {
+		case b == 3: // ctrl-c
 			fmt.Fprint(out, "\r\n")
 			return nil, errors.New("aborted")
-		case '\r', '\n':
+		case b == '\r' || b == '\n':
 			fmt.Fprint(out, "\r\n")
-			var idx []int
-			for i, s := range selected {
-				if s {
-					idx = append(idx, i)
-				}
+			return collectSelected(selected), nil
+		case b == 127 || b == 8: // backspace
+			if query != "" {
+				r := []rune(query)
+				query = string(r[:len(r)-1])
+				refilter()
 			}
-			return idx, nil
-		case ' ':
-			selected[active] = !selected[active]
-		case 'a':
+		case b == 1: // ctrl-a: toggle all currently filtered
 			allOn := true
-			for _, s := range selected {
-				if !s {
+			for _, i := range filtered {
+				if !selected[i] {
 					allOn = false
 					break
 				}
 			}
-			for i := range selected {
+			for _, i := range filtered {
 				selected[i] = !allOn
 			}
-		case 'k':
-			move(-1)
-		case 'j':
-			move(1)
-		case 0x1b: // escape sequence, e.g. arrow keys "\x1b[A"
-			if b2, _ := reader.ReadByte(); b2 != '[' {
-				continue
+		case b == ' ':
+			if len(filtered) > 0 {
+				selected[filtered[active]] = !selected[filtered[active]]
+			}
+		case b == 0x1b: // escape sequence (arrows) or lone esc (abort)
+			b2, err := reader.ReadByte()
+			if err != nil || b2 != '[' {
+				fmt.Fprint(out, "\r\n")
+				return nil, errors.New("aborted")
 			}
 			switch b3, _ := reader.ReadByte(); b3 {
 			case 'A':
@@ -121,9 +193,37 @@ func pickServers(reader *bufio.Reader, names, descs []string) ([]int, error) {
 			case 'B':
 				move(1)
 			}
+		case b > 32 && b < 127: // printable: add to filter
+			query += string(rune(b))
+			refilter()
+		default:
+			continue // ignore other control bytes without redrawing
 		}
 		draw()
 	}
+}
+
+func statusLine(selected []bool, filtered []int, offset, end int) string {
+	n := 0
+	for _, s := range selected {
+		if s {
+			n++
+		}
+	}
+	if len(filtered) == 0 {
+		return fmt.Sprintf("%d selected", n)
+	}
+	return fmt.Sprintf("%d selected · showing %d-%d of %d", n, offset+1, end, len(filtered))
+}
+
+func collectSelected(selected []bool) []int {
+	var idx []int
+	for i, s := range selected {
+		if s {
+			idx = append(idx, i)
+		}
+	}
+	return idx
 }
 
 // truncate shortens s to at most max runes, adding an ellipsis when cut.
