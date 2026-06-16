@@ -44,7 +44,7 @@ func interactiveSelect(cat *Catalog) ([]selection, error) {
 
 		if cur, ok := serverArgs(cat.Servers[name].Config); ok {
 			fmt.Printf("\nArgs for %q\n  current: %s\n", name, strings.Join(cur, " "))
-			fmt.Print("  extra/override args (e.g. --browser-url=http://127.0.0.1:9333), blank to keep: ")
+			fmt.Printf("  extra/override args (e.g. %s), blank to keep: ", argExample(cur))
 			argLine, _ := reader.ReadString('\n')
 			if fields := strings.Fields(argLine); len(fields) > 0 {
 				sel.extraArgs = fields

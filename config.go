@@ -86,6 +86,29 @@ func (o orderedObject) set(key string, val json.RawMessage) {
 	}
 }
 
+// defaultArgExample is the hint shown when a server has no "--" flag to model.
+const defaultArgExample = "--browser-url=http://127.0.0.1:9333"
+
+// argExample builds a representative override example from a server's own args:
+// the first "--" flag, plus its following value when the flag isn't the joined
+// "--flag=value" form (e.g. "--connectionString mongodb://..."). Falls back to a
+// generic example when the server has no "--" flag.
+func argExample(args []string) string {
+	for i, a := range args {
+		if !strings.HasPrefix(a, "--") {
+			continue
+		}
+		if strings.Contains(a, "=") {
+			return a
+		}
+		if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+			return a + " " + args[i+1]
+		}
+		return a
+	}
+	return defaultArgExample
+}
+
 // serverArgs returns the "args" array of a server config, if it has one.
 func serverArgs(config json.RawMessage) ([]string, bool) {
 	obj, err := parseOrderedObject(config)
