@@ -43,6 +43,7 @@ func main() {
 
 func run(args []string) error {
 	if len(args) == 0 {
+		printBanner()
 		fmt.Print(usage)
 		return nil
 	}
@@ -70,9 +71,11 @@ func run(args []string) error {
 		}
 		return runGenerate(cat, sels, force)
 	case "help", "-h", "--help":
+		printBanner()
 		fmt.Print(usage)
 		return nil
 	default:
+		printBanner()
 		fmt.Print(usage)
 		return fmt.Errorf("unknown command: %q", args[0])
 	}
