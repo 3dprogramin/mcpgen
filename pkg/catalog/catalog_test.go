@@ -1,4 +1,4 @@
-package main
+package catalog
 
 import (
 	"strings"
@@ -8,9 +8,9 @@ import (
 // TestCatalogValid doubles as the CI guard for servers.json: every entry must
 // have a description and a config that is a JSON object.
 func TestCatalogValid(t *testing.T) {
-	cat, err := loadCatalog()
+	cat, err := Load()
 	if err != nil {
-		t.Fatalf("loadCatalog: %v", err)
+		t.Fatalf("Load: %v", err)
 	}
 	if len(cat.Servers) == 0 {
 		t.Fatal("catalog is empty")

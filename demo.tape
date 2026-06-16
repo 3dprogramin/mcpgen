@@ -1,5 +1,5 @@
 # Render with: make demo   (needs https://github.com/charmbracelet/vhs)
-Output demo.gif
+Output _img/demo.gif
 
 Set Shell "bash"
 Set FontSize 18

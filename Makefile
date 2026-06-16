@@ -31,5 +31,5 @@ snapshot:
 	goreleaser release --snapshot --clean
 
 clean:
-	rm -f mcpgen demo.gif
+	rm -f mcpgen
 	rm -rf dist/

@@ -1,4 +1,4 @@
-package main
+package catalog
 
 import (
 	"encoding/json"
@@ -69,14 +69,14 @@ func objKeys(t *testing.T, raw json.RawMessage) []string {
 
 func TestApplyArgsMergePreservesOrder(t *testing.T) {
 	config := json.RawMessage(`{"type":"stdio","command":"npx","args":["-y","chrome-devtools-mcp@latest","--browser-url=http://127.0.0.1:9222"],"env":{}}`)
-	got, err := applyArgs(config, []string{"--browser-url=http://127.0.0.1:9333"}, false)
+	got, err := ApplyArgs(config, []string{"--browser-url=http://127.0.0.1:9333"}, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if keys := objKeys(t, got); !reflect.DeepEqual(keys, []string{"type", "command", "args", "env"}) {
 		t.Errorf("key order changed: %v", keys)
 	}
-	args, _ := serverArgs(got)
+	args, _ := ServerArgs(got)
 	want := []string{"-y", "chrome-devtools-mcp@latest", "--browser-url=http://127.0.0.1:9333"}
 	if !reflect.DeepEqual(args, want) {
 		t.Errorf("args = %v, want %v", args, want)
@@ -86,11 +86,11 @@ func TestApplyArgsMergePreservesOrder(t *testing.T) {
 func TestApplyArgsReplaceAll(t *testing.T) {
 	config := json.RawMessage(`{"type":"stdio","command":"npx","args":["-y","old"],"env":{}}`)
 	override := []string{"-y", "new-pkg", "--flag=1"}
-	got, err := applyArgs(config, override, true)
+	got, err := ApplyArgs(config, override, true)
 	if err != nil {
 		t.Fatal(err)
 	}
-	args, _ := serverArgs(got)
+	args, _ := ServerArgs(got)
 	if !reflect.DeepEqual(args, override) {
 		t.Errorf("args = %v, want %v", args, override)
 	}
@@ -98,7 +98,7 @@ func TestApplyArgsReplaceAll(t *testing.T) {
 
 func TestApplyArgsEmptyOverrideUnchanged(t *testing.T) {
 	config := json.RawMessage(`{"type":"sse","url":"http://x"}`)
-	got, err := applyArgs(config, nil, false)
+	got, err := ApplyArgs(config, nil, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,16 +109,16 @@ func TestApplyArgsEmptyOverrideUnchanged(t *testing.T) {
 
 func TestApplyArgsNoArgsField(t *testing.T) {
 	config := json.RawMessage(`{"type":"sse","url":"http://x"}`)
-	if _, err := applyArgs(config, []string{"--flag=1"}, false); err == nil {
+	if _, err := ApplyArgs(config, []string{"--flag=1"}, false); err == nil {
 		t.Error("expected error when overriding args on a server without args")
 	}
 }
 
 func TestServerArgs(t *testing.T) {
-	if args, ok := serverArgs(json.RawMessage(`{"command":"npx","args":["-y","pkg"]}`)); !ok || len(args) != 2 {
-		t.Errorf("serverArgs stdio = %v, %v", args, ok)
+	if args, ok := ServerArgs(json.RawMessage(`{"command":"npx","args":["-y","pkg"]}`)); !ok || len(args) != 2 {
+		t.Errorf("ServerArgs stdio = %v, %v", args, ok)
 	}
-	if _, ok := serverArgs(json.RawMessage(`{"type":"sse","url":"http://x"}`)); ok {
-		t.Error("serverArgs should be false for sse config without args")
+	if _, ok := ServerArgs(json.RawMessage(`{"type":"sse","url":"http://x"}`)); ok {
+		t.Error("ServerArgs should be false for sse config without args")
 	}
 }

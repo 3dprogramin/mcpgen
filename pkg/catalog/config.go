@@ -1,4 +1,4 @@
-package main
+package catalog
 
 import (
 	"bytes"
@@ -86,8 +86,8 @@ func (o orderedObject) set(key string, val json.RawMessage) {
 	}
 }
 
-// serverArgs returns the "args" array of a server config, if it has one.
-func serverArgs(config json.RawMessage) ([]string, bool) {
+// ServerArgs returns the "args" array of a server config, if it has one.
+func ServerArgs(config json.RawMessage) ([]string, bool) {
 	obj, err := parseOrderedObject(config)
 	if err != nil {
 		return nil, false
@@ -103,11 +103,11 @@ func serverArgs(config json.RawMessage) ([]string, bool) {
 	return args, true
 }
 
-// applyArgs sets a server config's "args" array, preserving key order. When
+// ApplyArgs sets a server config's "args" array, preserving key order. When
 // replaceAll is true the override fully replaces the existing args; otherwise it
 // is merged in (a "--flag=value" override replaces an existing matching flag,
 // anything else is appended).
-func applyArgs(config json.RawMessage, override []string, replaceAll bool) (json.RawMessage, error) {
+func ApplyArgs(config json.RawMessage, override []string, replaceAll bool) (json.RawMessage, error) {
 	if len(override) == 0 {
 		return config, nil
 	}

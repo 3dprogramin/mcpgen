@@ -8,7 +8,7 @@ A tiny CLI that generates project-local `.mcp.json` files from a bundled catalog
 of [MCP](https://modelcontextprotocol.io) servers - so you stop copy-pasting and
 reformatting server configs every time you start a new project.
 
-![demo](./demo.gif)
+![demo](./_img/demo.gif)
 
 ## Install
 
@@ -132,9 +132,9 @@ text with no banner or escape codes.
 
 ## Catalog
 
-The catalog lives in [`servers.json`](./servers.json) and is compiled into the
-binary via `go:embed`. Each entry is just a name, a description, and the raw MCP
-server config:
+The catalog lives in [`pkg/catalog/servers.json`](./pkg/catalog/servers.json)
+and is compiled into the binary via `go:embed`. Each entry is just a name, a
+description, and the raw MCP server config:
 
 ```json
 {

@@ -1,17 +1,19 @@
-package main
+package generate
 
 import (
 	"encoding/json"
 	"os"
 	"sort"
 	"testing"
+
+	"github.com/3dprogramin/mcpgen/pkg/catalog"
 )
 
 func readServers(t *testing.T) []string {
 	t.Helper()
-	data, err := os.ReadFile(mcpFileName)
+	data, err := os.ReadFile(FileName)
 	if err != nil {
-		t.Fatalf("reading %s: %v", mcpFileName, err)
+		t.Fatalf("reading %s: %v", FileName, err)
 	}
 	var f mcpFile
 	if err := json.Unmarshal(data, &f); err != nil {
@@ -25,14 +27,14 @@ func readServers(t *testing.T) []string {
 	return names
 }
 
-func TestRunGenerateCreateAndMerge(t *testing.T) {
-	cat, err := loadCatalog()
+func TestRunCreateAndMerge(t *testing.T) {
+	cat, err := catalog.Load()
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Chdir(t.TempDir())
 
-	if err := runGenerate(cat, []selection{{name: "burp"}}, false); err != nil {
+	if _, err := Run(cat, []Selection{{Name: "burp"}}, false); err != nil {
 		t.Fatal(err)
 	}
 	if got := readServers(t); len(got) != 1 || got[0] != "burp" {
@@ -40,7 +42,7 @@ func TestRunGenerateCreateAndMerge(t *testing.T) {
 	}
 
 	// Merge a second server, the first should remain.
-	if err := runGenerate(cat, []selection{{name: "chrome-devtools"}}, false); err != nil {
+	if _, err := Run(cat, []Selection{{Name: "chrome-devtools"}}, false); err != nil {
 		t.Fatal(err)
 	}
 	if got := readServers(t); len(got) != 2 {
@@ -48,31 +50,31 @@ func TestRunGenerateCreateAndMerge(t *testing.T) {
 	}
 }
 
-func TestRunGenerateConflict(t *testing.T) {
-	cat, err := loadCatalog()
+func TestRunConflict(t *testing.T) {
+	cat, err := catalog.Load()
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Chdir(t.TempDir())
 
-	if err := runGenerate(cat, []selection{{name: "burp"}}, false); err != nil {
+	if _, err := Run(cat, []Selection{{Name: "burp"}}, false); err != nil {
 		t.Fatal(err)
 	}
-	if err := runGenerate(cat, []selection{{name: "burp"}}, false); err == nil {
+	if _, err := Run(cat, []Selection{{Name: "burp"}}, false); err == nil {
 		t.Fatal("expected conflict error without force")
 	}
-	if err := runGenerate(cat, []selection{{name: "burp"}}, true); err != nil {
+	if _, err := Run(cat, []Selection{{Name: "burp"}}, true); err != nil {
 		t.Fatalf("force should overwrite: %v", err)
 	}
 }
 
-func TestRunGenerateUnknown(t *testing.T) {
-	cat, err := loadCatalog()
+func TestRunUnknown(t *testing.T) {
+	cat, err := catalog.Load()
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Chdir(t.TempDir())
-	if err := runGenerate(cat, []selection{{name: "nope"}}, false); err == nil {
+	if _, err := Run(cat, []Selection{{Name: "nope"}}, false); err == nil {
 		t.Fatal("expected error for unknown server")
 	}
 }

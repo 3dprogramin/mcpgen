@@ -1,4 +1,4 @@
-package main
+package tui
 
 import (
 	"bufio"
@@ -8,6 +8,8 @@ import (
 	"unicode/utf8"
 
 	"golang.org/x/term"
+
+	"github.com/3dprogramin/mcpgen/pkg/style"
 )
 
 // stdinIsTTY reports whether both stdin and stdout are interactive terminals,
@@ -38,8 +40,8 @@ func pickServers(reader *bufio.Reader, names, descs []string) ([]int, error) {
 		}
 	}
 
-	fmt.Fprint(out, bold("Select MCP servers")+
-		dim(" - ↑/↓ move · space toggle · a all · enter confirm · q quit")+"\r\n")
+	fmt.Fprint(out, style.Bold("Select MCP servers")+
+		style.Dim(" - ↑/↓ move · space toggle · a all · enter confirm · q quit")+"\r\n")
 
 	// Visible width of the "pointer + box + space" prefix, which is colored but
 	// fixed-width; truncation works on the plain body to keep widths correct.
@@ -58,11 +60,11 @@ func pickServers(reader *bufio.Reader, names, descs []string) ([]int, error) {
 		for i, n := range names {
 			pointer := "  "
 			if i == active {
-				pointer = cyan("> ")
+				pointer = style.Cyan("> ")
 			}
 			box := "[ ]"
 			if selected[i] {
-				box = green("[x]")
+				box = style.Green("[x]")
 			}
 			body := fmt.Sprintf("%-*s  %s", nameW, n, descs[i])
 			fmt.Fprintf(out, "\r\x1b[2K%s%s %s\r\n", pointer, box, truncate(body, width-1-prefixW))

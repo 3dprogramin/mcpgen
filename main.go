@@ -8,6 +8,11 @@ import (
 	"runtime/debug"
 	"strings"
 	"text/tabwriter"
+
+	"github.com/3dprogramin/mcpgen/pkg/catalog"
+	"github.com/3dprogramin/mcpgen/pkg/generate"
+	"github.com/3dprogramin/mcpgen/pkg/style"
+	"github.com/3dprogramin/mcpgen/pkg/tui"
 )
 
 // version is overridden at release time via -ldflags "-X main.version=...".
@@ -41,59 +46,75 @@ Examples:
 
 func main() {
 	if err := run(os.Args[1:]); err != nil {
-		fmt.Fprintln(os.Stderr, red("error:")+" "+err.Error())
+		fmt.Fprintln(os.Stderr, style.Red("error:")+" "+err.Error())
 		os.Exit(1)
 	}
 }
 
 func run(args []string) error {
 	if len(args) == 0 {
-		printBanner()
+		style.PrintBanner()
 		fmt.Print(usage)
 		return nil
 	}
 
-	cat, err := loadCatalog()
+	switch args[0] {
+	case "version", "-v", "--version":
+		fmt.Printf("mcpgen %s\n", versionString())
+		return nil
+	case "help", "-h", "--help":
+		style.PrintBanner()
+		fmt.Print(usage)
+		return nil
+	}
+
+	cat, err := catalog.Load()
 	if err != nil {
 		return err
 	}
 
 	switch args[0] {
 	case "list", "ls", "-l", "--list":
-		printBanner()
+		style.PrintBanner()
 		return runList(cat)
 	case "generate", "gen", "g":
-		printBanner()
-		sels, force, err := parseGenerateArgs(args[1:])
-		if err != nil {
-			return err
-		}
-		if len(sels) == 0 {
-			sels, err = interactiveSelect(cat)
-			if err != nil {
-				return err
-			}
-		}
-		return runGenerate(cat, sels, force)
-	case "version", "-v", "--version":
-		fmt.Printf("mcpgen %s\n", versionString())
-		return nil
-	case "help", "-h", "--help":
-		printBanner()
-		fmt.Print(usage)
-		return nil
+		style.PrintBanner()
+		return runGenerate(cat, args[1:])
 	default:
-		printBanner()
+		style.PrintBanner()
 		fmt.Print(usage)
 		return fmt.Errorf("unknown command: %q", args[0])
 	}
+}
+
+func runGenerate(cat *catalog.Catalog, args []string) error {
+	sels, force, err := parseGenerateArgs(args)
+	if err != nil {
+		return err
+	}
+	if len(sels) == 0 {
+		sels, err = tui.Select(cat)
+		if err != nil {
+			return err
+		}
+	}
+
+	added, err := generate.Run(cat, sels, force)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("%s Wrote %s (%d server(s): %s)\n",
+		style.Green("✓"), style.Bold(generate.FileName), len(added), strings.Join(added, ", "))
+	fmt.Println(style.Yellow("Remember to replace any PLACEHOLDER values (API keys, paths, connection strings)."))
+	return nil
 }
 
 // parseGenerateArgs splits generate arguments into server selections and the
 // force flag. Tokens before "--" that start with "-" (other than the force flag)
 // and everything after "--" are treated as arg overrides; they apply to the one
 // selected server. Bare tokens are server names.
-func parseGenerateArgs(args []string) (sels []selection, force bool, err error) {
+func parseGenerateArgs(args []string) (sels []generate.Selection, force bool, err error) {
 	var names, extra []string
 	afterSep := false
 	for _, a := range args {
@@ -112,7 +133,7 @@ func parseGenerateArgs(args []string) (sels []selection, force bool, err error) 
 	}
 
 	for _, n := range names {
-		sels = append(sels, selection{name: n})
+		sels = append(sels, generate.Selection{Name: n})
 	}
 
 	if len(extra) > 0 {
@@ -121,7 +142,7 @@ func parseGenerateArgs(args []string) (sels []selection, force bool, err error) 
 				"arg overrides apply to a single server, but %d were given; "+
 					"run interactively or one server at a time", len(sels))
 		}
-		sels[0].overrideArgs = extra
+		sels[0].OverrideArgs = extra
 	}
 	return sels, force, nil
 }
@@ -138,10 +159,10 @@ func versionString() string {
 	return version
 }
 
-func runList(cat *Catalog) error {
+func runList(cat *catalog.Catalog) error {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	fmt.Fprintln(w, "NAME\tDESCRIPTION")
-	for _, name := range cat.names() {
+	for _, name := range cat.Names() {
 		fmt.Fprintf(w, "%s\t%s\n", name, cat.Servers[name].Description)
 	}
 	return w.Flush()

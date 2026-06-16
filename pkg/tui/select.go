@@ -1,4 +1,5 @@
-package main
+// Package tui implements the interactive server picker and arg prompts.
+package tui
 
 import (
 	"bufio"
@@ -7,13 +8,17 @@ import (
 	"strconv"
 	"strings"
 	"text/tabwriter"
+
+	"github.com/3dprogramin/mcpgen/pkg/catalog"
+	"github.com/3dprogramin/mcpgen/pkg/generate"
+	"github.com/3dprogramin/mcpgen/pkg/style"
 )
 
-// interactiveSelect runs the no-args generate flow: pick servers (arrow-key
-// checkbox on a TTY, numbered prompt otherwise), then optionally override each
-// selected server's args.
-func interactiveSelect(cat *Catalog) ([]selection, error) {
-	names := cat.names()
+// Select runs the no-args generate flow: pick servers (arrow-key checkbox on a
+// TTY, numbered prompt otherwise), then optionally override each selected
+// server's args.
+func Select(cat *catalog.Catalog) ([]generate.Selection, error) {
+	names := cat.Names()
 	if len(names) == 0 {
 		return nil, fmt.Errorf("catalog is empty")
 	}
@@ -37,19 +42,19 @@ func interactiveSelect(cat *Catalog) ([]selection, error) {
 		return nil, fmt.Errorf("no servers selected")
 	}
 
-	var sels []selection
+	var sels []generate.Selection
 	for _, i := range idx {
 		name := names[i]
-		sel := selection{name: name}
+		sel := generate.Selection{Name: name}
 
-		if cur, ok := serverArgs(cat.Servers[name].Config); ok {
-			fmt.Printf("\n%s %s\n", bold("Args for"), bold(`"`+name+`"`))
-			fmt.Printf("  %s %s\n", dim("current:"), strings.Join(cur, " "))
-			fmt.Printf("  %s ", dim("new args (replaces all, blank to keep):"))
+		if cur, ok := catalog.ServerArgs(cat.Servers[name].Config); ok {
+			fmt.Printf("\n%s %s\n", style.Bold("Args for"), style.Bold(`"`+name+`"`))
+			fmt.Printf("  %s %s\n", style.Dim("current:"), strings.Join(cur, " "))
+			fmt.Printf("  %s ", style.Dim("new args (replaces all, blank to keep):"))
 			argLine, _ := reader.ReadString('\n')
 			if fields := strings.Fields(argLine); len(fields) > 0 {
-				sel.overrideArgs = fields
-				sel.replaceAll = true
+				sel.OverrideArgs = fields
+				sel.ReplaceAll = true
 			}
 		}
 		sels = append(sels, sel)
@@ -60,7 +65,7 @@ func interactiveSelect(cat *Catalog) ([]selection, error) {
 
 // numberedSelect is the non-TTY fallback: print a numbered list and read a
 // selection line.
-func numberedSelect(reader *bufio.Reader, cat *Catalog, names []string) ([]int, error) {
+func numberedSelect(reader *bufio.Reader, cat *catalog.Catalog, names []string) ([]int, error) {
 	fmt.Println("Available MCP servers:")
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	for i, name := range names {

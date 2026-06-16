@@ -5,7 +5,8 @@ Thanks for helping grow the catalog! The most valuable contribution is usually
 
 ## Add a server to the catalog
 
-1. Open [`servers.json`](./servers.json) and add an entry under `servers`:
+1. Open [`pkg/catalog/servers.json`](./pkg/catalog/servers.json) and add an
+   entry under `servers`:
 
    ```json
    "my-server": {
