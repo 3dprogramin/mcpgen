@@ -33,9 +33,8 @@ type Selection struct {
 	ReplaceAll   bool
 }
 
-// Run writes the selected servers to ./.mcp.json, merging into an existing file
-// and refusing to clobber existing servers unless force is set. It returns the
-// sorted names that were written.
+// Run builds configs from catalog selections and writes them to ./.mcp.json.
+// It returns the sorted names that were written.
 func Run(cat *catalog.Catalog, sels []Selection, force bool) ([]string, error) {
 	if len(sels) == 0 {
 		return nil, errors.New("no servers given - try `mcpgen list` to see what's available")
@@ -53,6 +52,25 @@ func Run(cat *catalog.Catalog, sels []Selection, force bool) ([]string, error) {
 			strings.Join(unknown, ", "))
 	}
 
+	servers := make(map[string]json.RawMessage, len(sels))
+	for _, sel := range sels {
+		cfg, err := catalog.ApplyArgs(cat.Servers[sel.Name].Config, sel.OverrideArgs, sel.ReplaceAll)
+		if err != nil {
+			return nil, fmt.Errorf("server %q: %w", sel.Name, err)
+		}
+		servers[sel.Name] = cfg
+	}
+	return Write(servers, force)
+}
+
+// Write merges the given server configs into ./.mcp.json (creating it if needed)
+// and returns the sorted names written. Existing servers are not overwritten
+// unless force is set.
+func Write(servers map[string]json.RawMessage, force bool) ([]string, error) {
+	if len(servers) == 0 {
+		return nil, errors.New("no servers to write")
+	}
+
 	// Load existing .mcp.json if present, so we merge instead of replace.
 	out := mcpFile{MCPServers: map[string]json.RawMessage{}}
 	if data, err := os.ReadFile(FileName); err == nil {
@@ -66,23 +84,24 @@ func Run(cat *catalog.Catalog, sels []Selection, force bool) ([]string, error) {
 		return nil, fmt.Errorf("reading %s: %w", FileName, err)
 	}
 
-	var added, skipped []string
-	for _, sel := range sels {
-		if _, exists := out.MCPServers[sel.Name]; exists && !force {
-			skipped = append(skipped, sel.Name)
-			continue
-		}
-		cfg, err := catalog.ApplyArgs(cat.Servers[sel.Name].Config, sel.OverrideArgs, sel.ReplaceAll)
-		if err != nil {
-			return nil, fmt.Errorf("server %q: %w", sel.Name, err)
-		}
-		out.MCPServers[sel.Name] = cfg
-		added = append(added, sel.Name)
+	added := make([]string, 0, len(servers))
+	for name := range servers {
+		added = append(added, name)
 	}
+	sort.Strings(added)
 
+	var skipped []string
+	for _, name := range added {
+		if _, exists := out.MCPServers[name]; exists && !force {
+			skipped = append(skipped, name)
+		}
+	}
 	if len(skipped) > 0 {
 		return nil, fmt.Errorf("%s already defines: %s\nre-run with --force to overwrite",
 			FileName, strings.Join(skipped, ", "))
+	}
+	for _, name := range added {
+		out.MCPServers[name] = servers[name]
 	}
 
 	data, err := marshalMCPFile(out.MCPServers)
@@ -92,8 +111,6 @@ func Run(cat *catalog.Catalog, sels []Selection, force bool) ([]string, error) {
 	if err := os.WriteFile(FileName, data, 0o644); err != nil {
 		return nil, fmt.Errorf("writing %s: %w", FileName, err)
 	}
-
-	sort.Strings(added)
 	return added, nil
 }
 

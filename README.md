@@ -98,6 +98,23 @@ Args for "chrome-devtools"
 Whatever you type **replaces the whole arg list**; leave it blank to keep the
 defaults. (This differs from the command-line form below, which merges.)
 
+### Add a custom server
+
+To add a server that isn't in the catalog, build one interactively:
+
+```sh
+mcpgen add
+```
+
+It asks for the name first, then the transport type (`stdio`, `sse` or `http`;
+stdio by default), and the relevant fields:
+
+- **stdio** - command (defaults to `npx`), args, and optional env vars
+- **sse / http** - the URL and optional headers
+
+The result is merged into `./.mcp.json` just like `generate` (pass `--force` to
+overwrite an existing server of the same name).
+
 ### Overriding args
 
 Arg overrides apply to **exactly one server at a time**. If you pass any args,

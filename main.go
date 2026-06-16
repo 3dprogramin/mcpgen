@@ -3,6 +3,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"runtime/debug"
@@ -25,6 +26,7 @@ Usage:
   mcpgen generate                     Pick servers interactively
   mcpgen generate <name> [name...]    Add servers to ./.mcp.json
   mcpgen generate <name> [args...]    Override/append args on a single server
+  mcpgen add                          Build a custom server interactively
   mcpgen version                      Show the version
   mcpgen help                         Show this help
 
@@ -80,6 +82,9 @@ func run(args []string) error {
 	case "generate", "gen", "g":
 		style.PrintBanner()
 		return runGenerate(cat, args[1:])
+	case "add":
+		style.PrintBanner()
+		return runAdd(args[1:])
 	default:
 		style.PrintBanner()
 		fmt.Print(usage)
@@ -104,10 +109,35 @@ func runGenerate(cat *catalog.Catalog, args []string) error {
 		return err
 	}
 
-	fmt.Printf("%s Wrote %s (%d server(s): %s)\n",
-		style.Green("✓"), style.Bold(generate.FileName), len(added), strings.Join(added, ", "))
+	printWrote(added)
 	fmt.Println(style.Yellow("Remember to replace any PLACEHOLDER values (API keys, paths, connection strings)."))
 	return nil
+}
+
+// runAdd builds a custom server interactively and writes it to ./.mcp.json.
+func runAdd(args []string) error {
+	force := false
+	for _, a := range args {
+		if a == "-f" || a == "--force" {
+			force = true
+		}
+	}
+
+	name, cfg, err := tui.AddCustom()
+	if err != nil {
+		return err
+	}
+	added, err := generate.Write(map[string]json.RawMessage{name: cfg}, force)
+	if err != nil {
+		return err
+	}
+	printWrote(added)
+	return nil
+}
+
+func printWrote(added []string) {
+	fmt.Printf("%s Wrote %s (%d server(s): %s)\n",
+		style.Green("✓"), style.Bold(generate.FileName), len(added), strings.Join(added, ", "))
 }
 
 // parseGenerateArgs splits generate arguments into server selections and the
