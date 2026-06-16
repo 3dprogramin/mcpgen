@@ -1,9 +1,22 @@
 package catalog
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 )
+
+// TestCatalogOrder pins the display order to servers.json (not alphabetical).
+func TestCatalogOrder(t *testing.T) {
+	cat, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"obsidian", "chrome-devtools", "mongodb", "figma-developer", "burp"}
+	if got := cat.Names(); !reflect.DeepEqual(got, want) {
+		t.Errorf("Names() = %v, want %v", got, want)
+	}
+}
 
 // TestCatalogValid doubles as the CI guard for servers.json: every entry must
 // have a description and a config that is a JSON object.

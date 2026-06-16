@@ -1,19 +1,5 @@
 {
   "servers": {
-    "mongodb": {
-      "description": "MongoDB - query and manage a MongoDB database",
-      "config": {
-        "type": "stdio",
-        "command": "npx",
-        "args": [
-          "-y",
-          "mongodb-mcp-server",
-          "--connectionString",
-          "mongodb://127.0.0.1:27017/YOUR_DATABASE"
-        ],
-        "env": {}
-      }
-    },
     "obsidian": {
       "description": "Obsidian - read and write notes in an Obsidian vault",
       "config": {
@@ -33,6 +19,20 @@
           "-y",
           "chrome-devtools-mcp@latest",
           "--browser-url=http://127.0.0.1:9222"
+        ],
+        "env": {}
+      }
+    },
+    "mongodb": {
+      "description": "MongoDB - query and manage a MongoDB database",
+      "config": {
+        "type": "stdio",
+        "command": "npx",
+        "args": [
+          "-y",
+          "mongodb-mcp-server",
+          "--connectionString",
+          "mongodb://127.0.0.1:27017/YOUR_DATABASE"
         ],
         "env": {}
       }
