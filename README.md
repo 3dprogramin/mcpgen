@@ -65,8 +65,12 @@ prompt: `Select servers (e.g. 1 3, 1-3, or 'all')`.
 
 ### Overriding args
 
-When you generate a **single** server, any extra args after the name are merged
-into its `args`:
+Arg overrides apply to **exactly one server at a time**. If you pass any args,
+you must name a single server — naming two or more with args is an error. To
+customize several servers, use interactive mode or run `generate` once per
+server.
+
+Any extra args after the single server name are merged into its `args`:
 
 ```sh
 mcpgen generate chrome-devtools --browser-url=http://127.0.0.1:9333
@@ -75,14 +79,25 @@ mcpgen generate chrome-devtools --browser-url=http://127.0.0.1:9333
 - A `--flag=value` override **replaces** a matching flag already in the config —
   whether it's stored joined (`--flag=old`) or split (`--flag`, `old`).
 - Anything else is **appended** (e.g. `--headless`).
-- Use `--` to pass args that don't start with `-`.
 
 ```sh
-mcpgen generate mongodb -- --connectionString=mongodb://127.0.0.1:27017/mydb
+mcpgen generate mongodb --connectionString=mongodb://127.0.0.1:27017/mydb
 ```
 
-Arg overrides apply to one server at a time; to customize several, use
-interactive mode or run `generate` once per server.
+#### Reserved flags and the `--` separator
+
+`-f` / `--force` (and `--` itself) are reserved by mcpgen, so before the
+separator they control mcpgen, not the server. Everything **after `--`** is
+passed to the server verbatim. Use it to pass args that start without a dash, or
+args that would otherwise collide with a reserved flag:
+
+```sh
+# value doesn't start with "-"
+mcpgen generate mongodb -- mongodb://127.0.0.1:27017/mydb
+
+# pass a literal --force to the server's command
+mcpgen generate chrome-devtools -- --force
+```
 
 Catalog entries ship with **placeholders** for secrets and paths (API keys,
 connection strings, vault paths). After generating, open `.mcp.json` and replace
