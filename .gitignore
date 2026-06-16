@@ -1,0 +1,14 @@
+# Build output
+/mcpgen
+/dist/
+
+# Secrets / local / generated config — never commit
+.env
+.env.*
+.mcp.json
+CLAUDE.md
+.claude/
+
+# Editor / OS cruft
+.DS_Store
+*.swp

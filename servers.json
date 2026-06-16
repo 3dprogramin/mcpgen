@@ -1,0 +1,62 @@
+{
+  "servers": {
+    "mongodb": {
+      "description": "MongoDB — query and manage a MongoDB database",
+      "config": {
+        "type": "stdio",
+        "command": "npx",
+        "args": [
+          "-y",
+          "mongodb-mcp-server",
+          "--connectionString",
+          "mongodb://127.0.0.1:27017/YOUR_DATABASE"
+        ],
+        "env": {}
+      }
+    },
+    "obsidian": {
+      "description": "Obsidian — read and write notes in an Obsidian vault",
+      "config": {
+        "command": "npx",
+        "args": [
+          "@mauricio.wolff/mcp-obsidian@latest",
+          "/path/to/your/obsidian/vault"
+        ]
+      }
+    },
+    "chrome-devtools": {
+      "description": "Chrome DevTools — drive and inspect a Chrome instance",
+      "config": {
+        "type": "stdio",
+        "command": "npx",
+        "args": [
+          "-y",
+          "chrome-devtools-mcp@latest",
+          "--browser-url=http://127.0.0.1:9222"
+        ],
+        "env": {}
+      }
+    },
+    "figma-developer": {
+      "description": "Figma — read Figma files and download images",
+      "config": {
+        "type": "stdio",
+        "command": "npx",
+        "args": [
+          "-y",
+          "figma-developer-mcp",
+          "--figma-api-key=YOUR_FIGMA_API_KEY",
+          "--stdio"
+        ],
+        "env": {}
+      }
+    },
+    "burp": {
+      "description": "Burp Suite — SSE bridge to Burp's MCP endpoint",
+      "config": {
+        "type": "sse",
+        "url": "http://127.0.0.1:9876"
+      }
+    }
+  }
+}
