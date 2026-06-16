@@ -5,9 +5,13 @@ package main
 import (
 	"fmt"
 	"os"
+	"runtime/debug"
 	"strings"
 	"text/tabwriter"
 )
+
+// version is overridden at release time via -ldflags "-X main.version=...".
+var version = "dev"
 
 const usage = `mcpgen — generate .mcp.json files from a catalog of MCP servers
 
@@ -16,6 +20,7 @@ Usage:
   mcpgen generate                     Pick servers interactively
   mcpgen generate <name> [name...]    Add servers to ./.mcp.json
   mcpgen generate <name> [args...]    Override/append args on a single server
+  mcpgen version                      Show the version
   mcpgen help                         Show this help
 
 Flags (generate):
@@ -70,6 +75,9 @@ func run(args []string) error {
 			}
 		}
 		return runGenerate(cat, sels, force)
+	case "version", "-v", "--version":
+		fmt.Printf("mcpgen %s\n", versionString())
+		return nil
 	case "help", "-h", "--help":
 		printBanner()
 		fmt.Print(usage)
@@ -116,6 +124,18 @@ func parseGenerateArgs(args []string) (sels []selection, force bool, err error) 
 		sels[0].overrideArgs = extra
 	}
 	return sels, force, nil
+}
+
+// versionString resolves the version, preferring the ldflags value and falling
+// back to the module version recorded by `go install`.
+func versionString() string {
+	if version != "dev" {
+		return version
+	}
+	if bi, ok := debug.ReadBuildInfo(); ok && bi.Main.Version != "" && bi.Main.Version != "(devel)" {
+		return bi.Main.Version
+	}
+	return version
 }
 
 func runList(cat *Catalog) error {
