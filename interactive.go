@@ -44,10 +44,11 @@ func interactiveSelect(cat *Catalog) ([]selection, error) {
 
 		if cur, ok := serverArgs(cat.Servers[name].Config); ok {
 			fmt.Printf("\nArgs for %q\n  current: %s\n", name, strings.Join(cur, " "))
-			fmt.Printf("  extra/override args (e.g. %s), blank to keep: ", argExample(cur))
+			fmt.Print("  new args (replaces all, blank to keep): ")
 			argLine, _ := reader.ReadString('\n')
 			if fields := strings.Fields(argLine); len(fields) > 0 {
-				sel.extraArgs = fields
+				sel.overrideArgs = fields
+				sel.replaceAll = true
 			}
 		}
 		sels = append(sels, sel)

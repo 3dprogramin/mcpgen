@@ -63,6 +63,18 @@ Select MCP servers — ↑/↓ move · space toggle · a all · enter confirm ·
 When stdin/stdout isn't a terminal (pipes, CI), it falls back to a numbered
 prompt: `Select servers (e.g. 1 3, 1-3, or 'all')`.
 
+After selecting, each server with args shows its current args and lets you type
+a replacement. The current args are shown so you can copy and tweak them:
+
+```
+Args for "chrome-devtools"
+  current: -y chrome-devtools-mcp@latest --browser-url=http://127.0.0.1:9222
+  new args (replaces all, blank to keep):
+```
+
+Whatever you type **replaces the whole arg list**; leave it blank to keep the
+defaults. (This differs from the command-line form below, which merges.)
+
 ### Overriding args
 
 Arg overrides apply to **exactly one server at a time**. If you pass any args,

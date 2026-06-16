@@ -86,29 +86,6 @@ func (o orderedObject) set(key string, val json.RawMessage) {
 	}
 }
 
-// defaultArgExample is the hint shown when a server has no "--" flag to model.
-const defaultArgExample = "--browser-url=http://127.0.0.1:9333"
-
-// argExample builds a representative override example from a server's own args:
-// the first "--" flag, plus its following value when the flag isn't the joined
-// "--flag=value" form (e.g. "--connectionString mongodb://..."). Falls back to a
-// generic example when the server has no "--" flag.
-func argExample(args []string) string {
-	for i, a := range args {
-		if !strings.HasPrefix(a, "--") {
-			continue
-		}
-		if strings.Contains(a, "=") {
-			return a
-		}
-		if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
-			return a + " " + args[i+1]
-		}
-		return a
-	}
-	return defaultArgExample
-}
-
 // serverArgs returns the "args" array of a server config, if it has one.
 func serverArgs(config json.RawMessage) ([]string, bool) {
 	obj, err := parseOrderedObject(config)
@@ -126,11 +103,12 @@ func serverArgs(config json.RawMessage) ([]string, bool) {
 	return args, true
 }
 
-// applyArgs merges extra args into a server config's "args" array, preserving
-// key order. A "--flag=value" override replaces an existing "--flag=..." entry;
-// anything else is appended if not already present.
-func applyArgs(config json.RawMessage, extra []string) (json.RawMessage, error) {
-	if len(extra) == 0 {
+// applyArgs sets a server config's "args" array, preserving key order. When
+// replaceAll is true the override fully replaces the existing args; otherwise it
+// is merged in (a "--flag=value" override replaces an existing matching flag,
+// anything else is appended).
+func applyArgs(config json.RawMessage, override []string, replaceAll bool) (json.RawMessage, error) {
+	if len(override) == 0 {
 		return config, nil
 	}
 	obj, err := parseOrderedObject(config)
@@ -146,7 +124,11 @@ func applyArgs(config json.RawMessage, extra []string) (json.RawMessage, error) 
 		return nil, fmt.Errorf("server \"args\" is not a string array: %w", err)
 	}
 
-	args = mergeArgs(args, extra)
+	if replaceAll {
+		args = override
+	} else {
+		args = mergeArgs(args, override)
+	}
 
 	newRaw, err := json.Marshal(args)
 	if err != nil {

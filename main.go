@@ -108,7 +108,7 @@ func parseGenerateArgs(args []string) (sels []selection, force bool, err error) 
 				"arg overrides apply to a single server, but %d were given; "+
 					"run interactively or one server at a time", len(sels))
 		}
-		sels[0].extraArgs = extra
+		sels[0].overrideArgs = extra
 	}
 	return sels, force, nil
 }

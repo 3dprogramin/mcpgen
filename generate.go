@@ -19,10 +19,13 @@ type mcpFile struct {
 	MCPServers map[string]json.RawMessage `json:"mcpServers"`
 }
 
-// selection is a chosen server plus any args to override/append on its config.
+// selection is a chosen server plus any args to apply to its config. When
+// replaceAll is set, overrideArgs replace the config's args entirely; otherwise
+// they are merged in.
 type selection struct {
-	name      string
-	extraArgs []string
+	name         string
+	overrideArgs []string
+	replaceAll   bool
 }
 
 // runGenerate writes the selected servers to ./.mcp.json, merging into an
@@ -63,7 +66,7 @@ func runGenerate(cat *Catalog, sels []selection, force bool) error {
 			skipped = append(skipped, sel.name)
 			continue
 		}
-		cfg, err := applyArgs(cat.Servers[sel.name].Config, sel.extraArgs)
+		cfg, err := applyArgs(cat.Servers[sel.name].Config, sel.overrideArgs, sel.replaceAll)
 		if err != nil {
 			return fmt.Errorf("server %q: %w", sel.name, err)
 		}
