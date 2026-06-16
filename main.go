@@ -36,7 +36,7 @@ Examples:
 
 func main() {
 	if err := run(os.Args[1:]); err != nil {
-		fmt.Fprintln(os.Stderr, "error: "+err.Error())
+		fmt.Fprintln(os.Stderr, red("error:")+" "+err.Error())
 		os.Exit(1)
 	}
 }
@@ -54,8 +54,10 @@ func run(args []string) error {
 
 	switch args[0] {
 	case "list", "ls", "-l", "--list":
+		printBanner()
 		return runList(cat)
 	case "generate", "gen", "g":
+		printBanner()
 		sels, force, err := parseGenerateArgs(args[1:])
 		if err != nil {
 			return err

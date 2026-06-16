@@ -115,6 +115,12 @@ Catalog entries ship with **placeholders** for secrets and paths (API keys,
 connection strings, vault paths). After generating, open `.mcp.json` and replace
 any `YOUR_*` / `/path/to/...` values with your real ones.
 
+## Output & colors
+
+On an interactive terminal mcpgen shows a banner and uses color. When stdout
+isn't a terminal (pipes, redirects, CI) or `NO_COLOR` is set, output is plain
+text with no banner or escape codes.
+
 ## Catalog
 
 The catalog lives in [`servers.json`](./servers.json) and is compiled into the

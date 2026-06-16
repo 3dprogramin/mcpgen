@@ -88,8 +88,9 @@ func runGenerate(cat *Catalog, sels []selection, force bool) error {
 	}
 
 	sort.Strings(added)
-	fmt.Printf("Wrote %s (%d server(s): %s)\n", mcpFileName, len(added), strings.Join(added, ", "))
-	fmt.Println("Remember to replace any PLACEHOLDER values (API keys, paths, connection strings).")
+	fmt.Printf("%s Wrote %s (%d server(s): %s)\n",
+		green("✓"), bold(mcpFileName), len(added), strings.Join(added, ", "))
+	fmt.Println(yellow("Remember to replace any PLACEHOLDER values (API keys, paths, connection strings)."))
 	return nil
 }
 

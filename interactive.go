@@ -43,8 +43,9 @@ func interactiveSelect(cat *Catalog) ([]selection, error) {
 		sel := selection{name: name}
 
 		if cur, ok := serverArgs(cat.Servers[name].Config); ok {
-			fmt.Printf("\nArgs for %q\n  current: %s\n", name, strings.Join(cur, " "))
-			fmt.Print("  new args (replaces all, blank to keep): ")
+			fmt.Printf("\n%s %s\n", bold("Args for"), bold(`"`+name+`"`))
+			fmt.Printf("  %s %s\n", dim("current:"), strings.Join(cur, " "))
+			fmt.Printf("  %s ", dim("new args (replaces all, blank to keep):"))
 			argLine, _ := reader.ReadString('\n')
 			if fields := strings.Fields(argLine); len(fields) > 0 {
 				sel.overrideArgs = fields
@@ -53,6 +54,7 @@ func interactiveSelect(cat *Catalog) ([]selection, error) {
 		}
 		sels = append(sels, sel)
 	}
+	fmt.Println() // separate the prompts from the result message
 	return sels, nil
 }
 
