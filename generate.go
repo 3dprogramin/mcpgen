@@ -19,19 +19,24 @@ type mcpFile struct {
 	MCPServers map[string]json.RawMessage `json:"mcpServers"`
 }
 
-// runGenerate selects servers from the catalog and writes them to ./.mcp.json,
-// merging into an existing file and refusing to clobber existing servers unless
-// force is set.
-func runGenerate(cat *Catalog, names []string, force bool) error {
-	if len(names) == 0 {
+// selection is a chosen server plus any args to override/append on its config.
+type selection struct {
+	name      string
+	extraArgs []string
+}
+
+// runGenerate writes the selected servers to ./.mcp.json, merging into an
+// existing file and refusing to clobber existing servers unless force is set.
+func runGenerate(cat *Catalog, sels []selection, force bool) error {
+	if len(sels) == 0 {
 		return errors.New("no servers given — try `mcpgen list` to see what's available")
 	}
 
 	// Validate every requested name up front so we never write a partial result.
 	var unknown []string
-	for _, name := range names {
-		if _, ok := cat.Servers[name]; !ok {
-			unknown = append(unknown, name)
+	for _, sel := range sels {
+		if _, ok := cat.Servers[sel.name]; !ok {
+			unknown = append(unknown, sel.name)
 		}
 	}
 	if len(unknown) > 0 {
@@ -53,13 +58,17 @@ func runGenerate(cat *Catalog, names []string, force bool) error {
 	}
 
 	var added, skipped []string
-	for _, name := range names {
-		if _, exists := out.MCPServers[name]; exists && !force {
-			skipped = append(skipped, name)
+	for _, sel := range sels {
+		if _, exists := out.MCPServers[sel.name]; exists && !force {
+			skipped = append(skipped, sel.name)
 			continue
 		}
-		out.MCPServers[name] = cat.Servers[name].Config
-		added = append(added, name)
+		cfg, err := applyArgs(cat.Servers[sel.name].Config, sel.extraArgs)
+		if err != nil {
+			return fmt.Errorf("server %q: %w", sel.name, err)
+		}
+		out.MCPServers[sel.name] = cfg
+		added = append(added, sel.name)
 	}
 
 	if len(skipped) > 0 {

@@ -5,22 +5,32 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 	"text/tabwriter"
 )
 
 const usage = `mcpgen — generate .mcp.json files from a catalog of MCP servers
 
 Usage:
-  mcpgen list                       List available servers
-  mcpgen generate <name> [name...]  Add servers to ./.mcp.json
-  mcpgen help                       Show this help
+  mcpgen list                         List available servers
+  mcpgen generate                     Pick servers interactively
+  mcpgen generate <name> [name...]    Add servers to ./.mcp.json
+  mcpgen generate <name> [args...]    Override/append args on a single server
+  mcpgen help                         Show this help
 
 Flags (generate):
   -f, --force   Overwrite servers that already exist in ./.mcp.json
 
+Arg overrides (single server only):
+  Pass extra args after the server name. A "--flag=value" replaces a matching
+  "--flag=..." already in the config; anything else is appended. Use "--" to
+  pass args that don't start with "-".
+
 Examples:
   mcpgen list
+  mcpgen generate                                       # interactive
   mcpgen generate chrome-devtools mongodb
+  mcpgen generate chrome-devtools --browser-url=http://127.0.0.1:9333
   mcpgen generate burp --force
 `
 
@@ -46,8 +56,17 @@ func run(args []string) error {
 	case "list", "ls", "-l", "--list":
 		return runList(cat)
 	case "generate", "gen", "g":
-		names, force := parseGenerateArgs(args[1:])
-		return runGenerate(cat, names, force)
+		sels, force, err := parseGenerateArgs(args[1:])
+		if err != nil {
+			return err
+		}
+		if len(sels) == 0 {
+			sels, err = interactiveSelect(cat)
+			if err != nil {
+				return err
+			}
+		}
+		return runGenerate(cat, sels, force)
 	case "help", "-h", "--help":
 		fmt.Print(usage)
 		return nil
@@ -57,18 +76,41 @@ func run(args []string) error {
 	}
 }
 
-// parseGenerateArgs splits generate arguments into server names and the force
-// flag, accepting the flag in any position.
-func parseGenerateArgs(args []string) (names []string, force bool) {
+// parseGenerateArgs splits generate arguments into server selections and the
+// force flag. Tokens before "--" that start with "-" (other than the force flag)
+// and everything after "--" are treated as arg overrides; they apply to the one
+// selected server. Bare tokens are server names.
+func parseGenerateArgs(args []string) (sels []selection, force bool, err error) {
+	var names, extra []string
+	afterSep := false
 	for _, a := range args {
-		switch a {
-		case "-f", "--force":
+		switch {
+		case afterSep:
+			extra = append(extra, a)
+		case a == "--":
+			afterSep = true
+		case a == "-f" || a == "--force":
 			force = true
+		case strings.HasPrefix(a, "-"):
+			extra = append(extra, a)
 		default:
 			names = append(names, a)
 		}
 	}
-	return names, force
+
+	for _, n := range names {
+		sels = append(sels, selection{name: n})
+	}
+
+	if len(extra) > 0 {
+		if len(sels) != 1 {
+			return nil, false, fmt.Errorf(
+				"arg overrides apply to a single server, but %d were given; "+
+					"run interactively or one server at a time", len(sels))
+		}
+		sels[0].extraArgs = extra
+	}
+	return sels, force, nil
 }
 
 func runList(cat *Catalog) error {
