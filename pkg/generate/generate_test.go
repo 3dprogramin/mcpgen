@@ -68,6 +68,44 @@ func TestRunConflict(t *testing.T) {
 	}
 }
 
+func TestRemove(t *testing.T) {
+	cat, err := catalog.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Chdir(t.TempDir())
+
+	if _, err := Run(cat, []Selection{{Name: "burp"}, {Name: "chrome-devtools"}}, false); err != nil {
+		t.Fatal(err)
+	}
+
+	removed, err := Remove([]string{"burp"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(removed) != 1 || removed[0] != "burp" {
+		t.Fatalf("removed = %v", removed)
+	}
+	if got := readServers(t); len(got) != 1 || got[0] != "chrome-devtools" {
+		t.Fatalf("after remove: %v", got)
+	}
+
+	// Removing a missing server errors and writes nothing.
+	if _, err := Remove([]string{"nope"}); err == nil {
+		t.Fatal("expected error removing a missing server")
+	}
+	if got := readServers(t); len(got) != 1 {
+		t.Fatalf("file changed after failed remove: %v", got)
+	}
+}
+
+func TestRemoveNoFile(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if _, err := Remove([]string{"burp"}); err == nil {
+		t.Fatal("expected error when no .mcp.json exists")
+	}
+}
+
 func TestRunUnknown(t *testing.T) {
 	cat, err := catalog.Load()
 	if err != nil {

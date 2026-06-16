@@ -117,6 +117,19 @@ overwrite an existing server of the same name). It then asks whether to **save
 the server to your catalog** for reuse - if you say yes, it's written to your
 user catalog (see below) so it shows up in `list` and `generate` from then on.
 
+### Remove servers
+
+To delete servers from `./.mcp.json`:
+
+```sh
+mcpgen remove mongodb chrome-devtools   # by name
+mcpgen remove                           # pick interactively
+```
+
+With no names it shows the servers currently in `./.mcp.json` in the same
+filterable picker. It errors without changing the file if a named server isn't
+present.
+
 ### Overriding args
 
 Arg overrides apply to **exactly one server at a time**. If you pass any args,

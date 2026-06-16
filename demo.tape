@@ -49,7 +49,23 @@ Sleep 1500ms
 
 Type "cat .mcp.json"
 Enter
-Sleep 3s
+Sleep 2500ms
+
+# Remove a server interactively.
+Type "mcpgen remove"
+Sleep 400ms
+Enter
+Sleep 1200ms
+Type "chrome"
+Sleep 700ms
+Space
+Sleep 600ms
+Enter
+Sleep 1200ms
+
+Type "cat .mcp.json"
+Enter
+Sleep 2500ms
 
 # Clean up (hidden).
 Hide

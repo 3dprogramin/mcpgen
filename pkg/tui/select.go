@@ -24,17 +24,11 @@ func Select(cat *catalog.Catalog) ([]generate.Selection, error) {
 	}
 	reader := bufio.NewReader(os.Stdin)
 
-	var idx []int
-	var err error
-	if stdinIsTTY() {
-		descs := make([]string, len(names))
-		for i, n := range names {
-			descs[i] = cat.Servers[n].Description
-		}
-		idx, err = pickServers(reader, names, descs)
-	} else {
-		idx, err = numberedSelect(reader, cat, names)
+	descs := make([]string, len(names))
+	for i, n := range names {
+		descs[i] = cat.Servers[n].Description
 	}
+	idx, err := pick(reader, "Select servers to add", names, descs)
 	if err != nil {
 		return nil, err
 	}
@@ -63,17 +57,35 @@ func Select(cat *catalog.Catalog) ([]generate.Selection, error) {
 	return sels, nil
 }
 
+// Pick shows the filterable checkbox picker (or numbered fallback) for an
+// arbitrary list and returns the selected indices. Reusable outside the catalog
+// flow (e.g. choosing servers to remove).
+func Pick(title string, names, descs []string) ([]int, error) {
+	if len(names) == 0 {
+		return nil, fmt.Errorf("nothing to choose from")
+	}
+	return pick(bufio.NewReader(os.Stdin), title, names, descs)
+}
+
+// pick branches between the TTY checkbox picker and the numbered fallback.
+func pick(reader *bufio.Reader, title string, names, descs []string) ([]int, error) {
+	if stdinIsTTY() {
+		return pickServers(reader, title, names, descs)
+	}
+	return numberedSelect(reader, title, names, descs)
+}
+
 // numberedSelect is the non-TTY fallback: print a numbered list and read a
 // selection line.
-func numberedSelect(reader *bufio.Reader, cat *catalog.Catalog, names []string) ([]int, error) {
-	fmt.Println("Available MCP servers:")
+func numberedSelect(reader *bufio.Reader, title string, names, descs []string) ([]int, error) {
+	fmt.Println(title + ":")
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	for i, name := range names {
-		fmt.Fprintf(w, "  %d)\t%s\t%s\n", i+1, name, cat.Servers[name].Description)
+		fmt.Fprintf(w, "  %d)\t%s\t%s\n", i+1, name, descs[i])
 	}
 	w.Flush()
 
-	fmt.Print("\nSelect servers (e.g. 1 3, 1-3, or 'all'): ")
+	fmt.Print("\nSelect (e.g. 1 3, 1-3, or 'all'): ")
 	line, err := reader.ReadString('\n')
 	if err != nil && line == "" {
 		return nil, err

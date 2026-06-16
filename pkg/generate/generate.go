@@ -114,6 +114,65 @@ func Write(servers map[string]json.RawMessage, force bool) ([]string, error) {
 	return added, nil
 }
 
+// Load reads the servers currently defined in ./.mcp.json.
+func Load() (map[string]json.RawMessage, error) {
+	data, err := os.ReadFile(FileName)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, fmt.Errorf("no %s in this directory", FileName)
+		}
+		return nil, err
+	}
+	var f mcpFile
+	if err := json.Unmarshal(data, &f); err != nil {
+		return nil, fmt.Errorf("%s is not valid JSON: %w", FileName, err)
+	}
+	if f.MCPServers == nil {
+		f.MCPServers = map[string]json.RawMessage{}
+	}
+	return f.MCPServers, nil
+}
+
+// Remove deletes the named servers from ./.mcp.json and returns the sorted names
+// removed. It errors (writing nothing) if any name is not present.
+func Remove(names []string) ([]string, error) {
+	if len(names) == 0 {
+		return nil, errors.New("no servers given")
+	}
+	servers, err := Load()
+	if err != nil {
+		return nil, err
+	}
+
+	var missing []string
+	for _, n := range names {
+		if _, ok := servers[n]; !ok {
+			missing = append(missing, n)
+		}
+	}
+	if len(missing) > 0 {
+		return nil, fmt.Errorf("%s does not define: %s", FileName, strings.Join(missing, ", "))
+	}
+
+	var removed []string
+	for _, n := range names {
+		if _, ok := servers[n]; ok {
+			delete(servers, n)
+			removed = append(removed, n)
+		}
+	}
+	sort.Strings(removed)
+
+	data, err := marshalMCPFile(servers)
+	if err != nil {
+		return nil, fmt.Errorf("encoding %s: %w", FileName, err)
+	}
+	if err := os.WriteFile(FileName, data, 0o644); err != nil {
+		return nil, fmt.Errorf("writing %s: %w", FileName, err)
+	}
+	return removed, nil
+}
+
 // marshalMCPFile renders the .mcp.json with 2-space indentation, servers sorted
 // by name, and each server's config indented in place so its original key order
 // is preserved.

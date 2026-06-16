@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"runtime/debug"
+	"sort"
 	"strings"
 	"text/tabwriter"
 
@@ -27,6 +28,7 @@ Usage:
   mcpgen generate <name> [name...]    Add servers to ./.mcp.json
   mcpgen generate <name> [args...]    Override/append args on a single server
   mcpgen add                          Build a custom server interactively
+  mcpgen remove [name...]             Remove servers from ./.mcp.json
   mcpgen version                      Show the version
   mcpgen help                         Show this help
 
@@ -60,6 +62,7 @@ func run(args []string) error {
 		return nil
 	}
 
+	// Commands that don't need the catalog loaded.
 	switch args[0] {
 	case "version", "-v", "--version":
 		fmt.Printf("mcpgen %s\n", versionString())
@@ -68,6 +71,12 @@ func run(args []string) error {
 		style.PrintBanner()
 		fmt.Print(usage)
 		return nil
+	case "add":
+		style.PrintBanner()
+		return runAdd(args[1:])
+	case "remove", "rm":
+		style.PrintBanner()
+		return runRemove(args[1:])
 	}
 
 	cat, err := catalog.Load()
@@ -82,9 +91,6 @@ func run(args []string) error {
 	case "generate", "gen", "g":
 		style.PrintBanner()
 		return runGenerate(cat, args[1:])
-	case "add":
-		style.PrintBanner()
-		return runAdd(args[1:])
 	default:
 		style.PrintBanner()
 		fmt.Print(usage)
@@ -146,6 +152,81 @@ func runAdd(args []string) error {
 func printWrote(added []string) {
 	fmt.Printf("%s Wrote %s (%d server(s): %s)\n",
 		style.Green("✓"), style.Bold(generate.FileName), len(added), strings.Join(added, ", "))
+}
+
+// runRemove deletes servers from ./.mcp.json, by name or interactively.
+func runRemove(args []string) error {
+	var names []string
+	for _, a := range args {
+		if !strings.HasPrefix(a, "-") {
+			names = append(names, a)
+		}
+	}
+
+	if len(names) == 0 {
+		servers, err := generate.Load()
+		if err != nil {
+			return err
+		}
+		if len(servers) == 0 {
+			return fmt.Errorf("%s has no servers to remove", generate.FileName)
+		}
+		ordered := make([]string, 0, len(servers))
+		for n := range servers {
+			ordered = append(ordered, n)
+		}
+		sort.Strings(ordered)
+		descs := make([]string, len(ordered))
+		for i, n := range ordered {
+			descs[i] = serverSummary(servers[n])
+		}
+		idx, err := tui.Pick("Select servers to remove", ordered, descs)
+		if err != nil {
+			return err
+		}
+		if len(idx) == 0 {
+			return fmt.Errorf("nothing selected")
+		}
+		for _, i := range idx {
+			names = append(names, ordered[i])
+		}
+	}
+
+	removed, err := generate.Remove(names)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("%s Removed from %s (%d): %s\n",
+		style.Green("✓"), style.Bold(generate.FileName), len(removed), strings.Join(removed, ", "))
+	return nil
+}
+
+// serverSummary builds a short one-line hint about a server config for the
+// remove picker.
+func serverSummary(config json.RawMessage) string {
+	var c struct {
+		Type    string   `json:"type"`
+		Command string   `json:"command"`
+		Args    []string `json:"args"`
+		URL     string   `json:"url"`
+	}
+	_ = json.Unmarshal(config, &c)
+	switch {
+	case c.URL != "":
+		typ := c.Type
+		if typ == "" {
+			typ = "remote"
+		}
+		return typ + " · " + c.URL
+	case c.Command != "":
+		s := "stdio · " + c.Command
+		if len(c.Args) > 0 {
+			s += " " + strings.Join(c.Args, " ")
+		}
+		return s
+	default:
+		return c.Type
+	}
 }
 
 // parseGenerateArgs splits generate arguments into server selections and the

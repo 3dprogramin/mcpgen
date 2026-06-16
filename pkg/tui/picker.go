@@ -39,7 +39,7 @@ const pickerHint = "type to filter · ↑/↓ move · space toggle · ^A all · 
 // pickServers shows an interactive, filterable checkbox list and returns the
 // selected indices (into names). Typing filters; ↑/↓ move; space toggles; ctrl-a
 // toggles all matches; enter confirms; esc / ctrl-c aborts.
-func pickServers(reader *bufio.Reader, names, descs []string) ([]int, error) {
+func pickServers(reader *bufio.Reader, title string, names, descs []string) ([]int, error) {
 	fd := int(os.Stdin.Fd())
 	oldState, err := term.MakeRaw(fd)
 	if err != nil {
@@ -79,9 +79,13 @@ func pickServers(reader *bufio.Reader, names, descs []string) ([]int, error) {
 				height = h
 			}
 		}
-		// Reserve 2 header lines + 1 status line, plus a spare so the final
-		// newline never scrolls the block out of place.
-		maxRows := height - 4
+		// Reserve header lines (optional title + Filter + hint) + 1 status line,
+		// plus a spare so the final newline never scrolls the block out of place.
+		header := 3
+		if title != "" {
+			header = 4
+		}
+		maxRows := height - header - 1
 		if maxRows < 1 {
 			maxRows = 1
 		}
@@ -104,6 +108,10 @@ func pickServers(reader *bufio.Reader, names, descs []string) ([]int, error) {
 		}
 
 		lines := 0
+		if title != "" {
+			fmt.Fprintf(out, "\r\x1b[2K%s\r\n", style.Bold(title))
+			lines++
+		}
 		fmt.Fprintf(out, "\r\x1b[2K%s %s\r\n", style.Bold("Filter:"), query+"▌")
 		lines++
 		fmt.Fprintf(out, "\r\x1b[2K%s\r\n", style.Dim(truncate(pickerHint, width-1)))
