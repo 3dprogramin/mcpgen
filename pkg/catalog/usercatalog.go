@@ -77,7 +77,10 @@ func SaveCustom(name, description string, config json.RawMessage) (string, error
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return "", err
 	}
-	if err := os.WriteFile(path, pretty.Bytes(), 0o644); err != nil {
+	if err := os.WriteFile(path, pretty.Bytes(), 0o600); err != nil {
+		return "", err
+	}
+	if err := os.Chmod(path, 0o600); err != nil {
 		return "", err
 	}
 	return path, nil

@@ -59,12 +59,12 @@
       }
     },
     "xquik": {
-      "description": "Xquik - X automation platform with remote MCP tools",
+      "description": "Xquik - X automation platform with remote MCP tools. Not affiliated with X Corp.",
       "config": {
         "type": "http",
         "url": "https://xquik.com/mcp",
         "headers": {
-          "x-api-key": "YOUR_XQUIK_API_KEY"
+          "X-API-Key": "YOUR_XQUIK_API_KEY"
         }
       }
     }

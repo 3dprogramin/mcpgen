@@ -2,7 +2,9 @@ package catalog
 
 import (
 	"encoding/json"
+	"os"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -67,6 +69,57 @@ func TestUserCatalog(t *testing.T) {
 	}
 	if count != 1 {
 		t.Errorf("zz-tool appears %d times, want 1", count)
+	}
+}
+
+func TestUserCatalogPermissions(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows does not expose Unix permission bits")
+	}
+	isolateUserCatalog(t)
+
+	path, err := SaveCustom("private", "Private", json.RawMessage(`{"type":"http","url":"https://example.com"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(path, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := SaveCustom("private", "Updated", json.RawMessage(`{"type":"http","url":"https://example.com"}`)); err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := info.Mode().Perm(); got != 0o600 {
+		t.Errorf("user catalog permissions = %04o, want 0600", got)
+	}
+}
+
+func TestXquikCatalogEntry(t *testing.T) {
+	isolateUserCatalog(t)
+	cat, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	server, ok := cat.Servers["xquik"]
+	if !ok {
+		t.Fatal("xquik server is missing")
+	}
+	var config struct {
+		Type    string            `json:"type"`
+		URL     string            `json:"url"`
+		Headers map[string]string `json:"headers"`
+	}
+	if err := json.Unmarshal(server.Config, &config); err != nil {
+		t.Fatal(err)
+	}
+	if config.Type != "http" || config.URL != "https://xquik.com/mcp" {
+		t.Errorf("xquik config = %+v", config)
+	}
+	if got := config.Headers["X-API-Key"]; got != "YOUR_XQUIK_API_KEY" {
+		t.Errorf("xquik API key placeholder = %q", got)
 	}
 }
 
