@@ -57,6 +57,16 @@
         "type": "sse",
         "url": "http://127.0.0.1:9876"
       }
+    },
+    "xquik": {
+      "description": "Xquik - X automation platform with remote MCP tools. Not affiliated with X Corp.",
+      "config": {
+        "type": "http",
+        "url": "https://xquik.com/mcp",
+        "headers": {
+          "X-API-Key": "YOUR_XQUIK_API_KEY"
+        }
+      }
     }
   }
 }

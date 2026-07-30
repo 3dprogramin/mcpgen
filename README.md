@@ -231,3 +231,5 @@ GoReleaser to build cross-platform binaries and publish a GitHub Release.
 ## License
 
 [MIT](./LICENSE)
+
+Xquik is an independent third-party service. Not affiliated with X Corp. "Twitter" and "X" are trademarks of X Corp.
