@@ -77,11 +77,32 @@ func SaveCustom(name, description string, config json.RawMessage) (string, error
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return "", err
 	}
-	if err := os.WriteFile(path, pretty.Bytes(), 0o600); err != nil {
-		return "", err
-	}
-	if err := os.Chmod(path, 0o600); err != nil {
+	if err := writePrivateFile(path, pretty.Bytes()); err != nil {
 		return "", err
 	}
 	return path, nil
+}
+
+// writePrivateFile tightens an existing file before replacing its contents.
+func writePrivateFile(path string, data []byte) (err error) {
+	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0o600)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if closeErr := file.Close(); err == nil {
+			err = closeErr
+		}
+	}()
+
+	if err := file.Chmod(0o600); err != nil {
+		return err
+	}
+	if err := file.Truncate(0); err != nil {
+		return err
+	}
+	if _, err := file.Write(data); err != nil {
+		return err
+	}
+	return file.Chmod(0o600)
 }

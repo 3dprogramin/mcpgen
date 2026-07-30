@@ -82,18 +82,27 @@ func TestUserCatalogPermissions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	assertFilePermissions(t, path, 0o600)
+
 	if err := os.Chmod(path, 0o644); err != nil {
 		t.Fatal(err)
 	}
+	assertFilePermissions(t, path, 0o644)
+
 	if _, err := SaveCustom("private", "Updated", json.RawMessage(`{"type":"http","url":"https://example.com"}`)); err != nil {
 		t.Fatal(err)
 	}
+	assertFilePermissions(t, path, 0o600)
+}
+
+func assertFilePermissions(t *testing.T, path string, want os.FileMode) {
+	t.Helper()
 	info, err := os.Stat(path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := info.Mode().Perm(); got != 0o600 {
-		t.Errorf("user catalog permissions = %04o, want 0600", got)
+	if got := info.Mode().Perm(); got != want {
+		t.Errorf("user catalog permissions = %04o, want %04o", got, want)
 	}
 }
 
