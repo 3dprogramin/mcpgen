@@ -21,7 +21,7 @@ func TestCatalogOrder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"obsidian", "chrome-devtools", "mongodb", "figma-developer", "burp"}
+	want := []string{"obsidian", "chrome-devtools", "mongodb", "figma-developer", "burp", "grafana"}
 	if got := cat.Names(); !reflect.DeepEqual(got, want) {
 		t.Errorf("Names() = %v, want %v", got, want)
 	}

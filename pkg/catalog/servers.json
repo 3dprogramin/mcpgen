@@ -57,6 +57,20 @@
         "type": "sse",
         "url": "http://127.0.0.1:9876"
       }
+    },
+    "grafana": {
+      "description": "Grafana - query dashboards, datasources and alerts in a Grafana instance",
+      "config": {
+        "type": "stdio",
+        "command": "uvx",
+        "args": [
+          "mcp-grafana"
+        ],
+        "env": {
+          "GRAFANA_URL": "http://localhost:3000",
+          "GRAFANA_SERVICE_ACCOUNT_TOKEN": "YOUR_GRAFANA_SERVICE_ACCOUNT_TOKEN"
+        }
+      }
     }
   }
 }
